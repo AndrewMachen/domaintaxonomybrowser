@@ -1,0 +1,13 @@
+fastapi>=0.115
+uvicorn[standard]>=0.30
+sqlalchemy>=2.0
+openpyxl>=3.1
+pydantic>=2.7
+# Schema migrations (run on startup via app.py / alembic upgrade head).
+alembic>=1.13
+# PostgreSQL / Databricks Lakebase driver (no-op for local SQLite).
+psycopg[binary]>=3.2
+# Databricks SDK: generates the Lakebase OAuth token for the do_connect hook.
+# Optional locally (the token refresh is skipped when it isn't installed),
+# required when deploying against Lakebase with OAuth credentials.
+databricks-sdk>=0.61

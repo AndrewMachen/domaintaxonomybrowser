@@ -1,0 +1,54 @@
+# Databricks Apps manifest.
+#
+# `python app.py` is the entry point. The app reads DATABRICKS_APP_PORT (set
+# automatically by the Databricks Apps runtime) and binds to 0.0.0.0, then
+# serves both the REST API (/api) and the React UI (/) from one process.
+command: ["python", "app.py"]
+
+env:
+  # --- Schema migrations -------------------------------------------------
+  # Run `alembic upgrade head` on startup (default). The app's engine is reused
+  # so the Lakebase token hook applies to migrations too. Set "false" only if
+  # you run migrations as a separate job.
+  - name: "RUN_MIGRATIONS"
+    value: "true"
+
+  # Auto-seed sample data on first boot when the database is empty. Recommended
+  # "false" in production so sample rows never land in a real database.
+  - name: "SEED_ON_STARTUP"
+    value: "false"
+
+  # --- Authorization (RBAC) ---------------------------------------------
+  # Must be "false" (or unset) in production so per-user identity from the
+  # Databricks SSO proxy (X-Forwarded-Email) is enforced. "true" disables auth
+  # and treats every caller as an admin -- local development only.
+  - name: "AUTH_DISABLED"
+    value: "false"
+
+  # Bootstrap administrators (comma-separated emails). These are always admins,
+  # so the first admin exists before any role rows are created. They can then
+  # assign roles/grants to others via /api/admin/*.
+  - name: "ADMIN_EMAILS"
+    value: "first.admin@yourcompany.com"
+
+  # Role for authenticated users with no explicit assignment. "viewer" is the
+  # safe default (read + export only); "editor" or "admin" are also valid.
+  - name: "DEFAULT_ROLE"
+    value: "viewer"
+
+  # --- Durable storage (Lakebase / Postgres) ----------------------------
+  # The app's local disk is ephemeral, so point at a managed Postgres instance.
+  # Recommended: attach a Lakebase database as an app *resource*; it injects
+  # PGHOST / PGDATABASE / PGUSER (and the app supplies the password from a fresh
+  # OAuth token -- see below), used automatically when DATABASE_URL is unset.
+  #
+  # To use an explicit URL instead, source it from a secret:
+  # - name: "DATABASE_URL"
+  #   valueFrom: "sql-database-url"
+
+  # Lakebase OAuth token refresh: set this to your Lakebase instance name to
+  # enable automatic per-connection token generation (tokens expire ~hourly).
+  # When set and the Databricks SDK is installed, the app injects a fresh token
+  # as the Postgres password on every new connection -- no static password.
+  # - name: "LAKEBASE_INSTANCE_NAME"
+  #   value: "my-lakebase-instance"
